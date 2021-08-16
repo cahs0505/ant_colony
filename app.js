@@ -6,7 +6,7 @@ let Application = PIXI.Application,
 
 let dimension =500 ; //number of grid in each dimension
 let gridSize = 5; 
-let antNum = 10
+let antNum = 1
 
 window.onload =()=>{
 
@@ -75,24 +75,35 @@ function Ant(){
     this.y = 300
     this.angle = Math.random()*Math.PI;
     this.turn = (Math.random()-0.5)*0.1;
+    this.waypoints = [[randomNum(0,10),randomNum(0,10)]*4]
 
     this.update = (delta)=>{
-        
-        this.x = this.x + this.speed * delta * Math.cos(this.angle)
-        this.y = this.y + this.speed * delta * Math.sin(this.angle)
+        c.walkPath(
+            this.graphics,
+            this.waypoints,
+            300,             //Total duration, in frames
+            "smoothstep",    //Easing type
+            true,            //Should the path loop?
+            true,            //Should the path reverse?
+            1000             //Delay in milliseconds between segments
+        )
+        // this.x = this.x + this.speed * delta * Math.cos(this.angle)
+        // this.y = this.y + this.speed * delta * Math.sin(this.angle)
 
-        this.angle += this.turn;
+        // this.angle += this.turn;
 
-        if(Math.random()<0.05){
-            this.turn = (Math.random()-0.5)*0.1;
-        }
+        // if(Math.random()<0.05){
+        //     this.turn = (Math.random()-0.5)*0.1;
+        // }
 
-        g.x = this.x
-        g.y = this.y
-        g.rotation = this.angle+Math.PI/2;
+        // g.x = this.x
+        // g.y = this.y
+        // g.rotation = this.angle+Math.PI/2;
     }
-   
-    
+}
+
+const randomNum = (min,max)=>{
+    return Math.floor(Math.random() * (max - min + 1) + min)
 }
 
 
