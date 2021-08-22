@@ -1,109 +1,114 @@
-let Application = PIXI.Application,
-    loader = PIXI.loader,
-    resources = PIXI.loader.resources,
-    Sprite = PIXI.Sprite;
+const appWidth = 3000
+const appHeight = 1500
+
+const LOOP = 50;
+
+const app = new PIXI.Application({
+    width:appWidth, 
+    height:appHeight,
+    backgroundColor: 0xf6c260
+});
+document.body.appendChild(app.view);
+
+// holder to store the aliens
+const ants = []
+const traits = []
+const pheromone = []
+const foods = []
+
+const antNum = 1
+const foodNum = 15
 
 
-let dimension =500 ; //number of grid in each dimension
-let gridSize = 5; 
-let antNum = 1
+for (let i = 0; i < antNum; i++) {
 
-window.onload =()=>{
+    let x = Math.random() * app.screen.width;
+    let y = Math.random() * app.screen.height;
 
-    let app = new Application({ 
-        width: document.body.clientWidth, 
-        height: document.body.clientWidth,
-        backgroundColor: 0xf2bfb4                     
+    let ant = Ant(x,y)
+    ants.push(ant)
+    console.log(ant.children)
+
+    app.stage.addChild(ant);
+}
+
+ants.forEach((ant)=>{
+    setInterval(()=>{
+        const trait = PIXI.Sprite.from("texture/trait.png")
+        trait.scale.set(0.1)
+        trait.x = ant.x
+        trait.y = ant.y
+        traits.push(trait)
+        app.stage.addChild(trait)
+    },200)
+})
+
+for (let i = 0; i < foodNum; i++){
+    const food = PIXI.Sprite.from("texture/food.png")
+    food.anchor.set(0.5)
+    food.scale.set(0.3)
+    food.x = Math.random() * app.screen.width;
+    food.y = Math.random() * app.screen.height;
+    // food.anchor.set(0.5)
+    foods.push(food)
+    app.stage.addChild(food)
+}
+
+app.ticker.add(() => {
+    // iterate through the ants and update their position
+    for (let i = 0; i < ants.length; i++) {
+        const ant = ants[i];
+        let vision = ant.children[1]
+
+        if(ant.seesFood){
+            //move towards food if ant sees food
+            ant.x += Math.cos(ant.targetFoodDirection) * ant.speed
+            ant.y += Math.sin(ant.targetFoodDirection) * ant.speed
+            ant.rotation = ant.targetFoodDirection + Math.PI/2
+
+            continue
+
+
+        }else{
+            //check if ant sees food
+            foods.forEach((food)=>{
+                if(vision.containsPoint(food.position)){
+                    ant.seesFood = true
+                    ant.targetFood = food.position
+                    ant.targetFoodDirection = Math.atan2(ant.targetFood.y-ant.y,ant.targetFood.x-ant.x)
+
+                }
+            })
+        }
+
         
-      }
-    );
+        //wander around when ant sees no food
+        ant.x += Math.cos(ant.direction) * ant.speed;
+        ant.y += Math.sin(ant.direction) * ant.speed;
 
-    document.body.appendChild(app.view);
-
-    loader
-      .add("texture/soil_1.png")
-      .add("texture/soil_2.png")
-      .add("texture/soil_3.png")
-      .add("texture/ant.png")
-      .load(setup)
-    
-      function setup(){
+        if(ant.x<-LOOP) ant.x=app.renderer.width+LOOP;
+		if(ant.x>app.renderer.width+LOOP) ant.x=-LOOP;
+		if(ant.y<-LOOP) ant.y=app.renderer.height+LOOP;
+		if(ant.y>app.renderer.height+LOOP) ant.y=-LOOP;
         
-        let ants = []
+        ant.direction += ant.swerve;
+		if(Math.random()<0.08){
+            ant.swerve = (Math.random()-0.5)*SWERVE
+        }
+        ant.rotation = ant.direction+Math.PI/2;
+       
 
-         for (let i=0;i<antNum;i++){
-             let ant = new Ant()
-             ants.push(ant)
-             app.stage.addChild(ants[i].graphics)
-         }
-         
-         app.ticker.add(delta=>{
-             for(let i=0;i<antNum;i++){
-                ants[i].update(delta)
-             }
-         })
-      }
-}
+        
 
-function Node(x,y){
-      
-    this.graphics = new Sprite(resources[`texture/soil_1.png`].texture)
-    let g = this.graphics
-
-    this.x = x 
-    this.y = y 
-
-    g.width = gridSize
-    g.height = gridSize
-    g.x = this.x * gridSize/2
-    g.y = this.y * gridSize/2
-
-    this.update = ()=>{      
     }
-}
 
-function Ant(){
-    this.graphics = new Sprite(resources[`texture/ant.png`].texture)
-    let g = this.graphics
-    g.scale.set(0.1)
-
-    this.charm = new Charm(PIXI);
-    let c = this.charm
-
-    this.speed = 2 
-    this.x = 300
-    this.y = 300
-    this.angle = Math.random()*Math.PI;
-    this.turn = (Math.random()-0.5)*0.1;
-    this.waypoints = [[randomNum(0,10),randomNum(0,10)]*4]
-
-    this.update = (delta)=>{
-        c.walkPath(
-            this.graphics,
-            this.waypoints,
-            300,             //Total duration, in frames
-            "smoothstep",    //Easing type
-            true,            //Should the path loop?
-            true,            //Should the path reverse?
-            1000             //Delay in milliseconds between segments
-        )
-        // this.x = this.x + this.speed * delta * Math.cos(this.angle)
-        // this.y = this.y + this.speed * delta * Math.sin(this.angle)
-
-        // this.angle += this.turn;
-
-        // if(Math.random()<0.05){
-        //     this.turn = (Math.random()-0.5)*0.1;
-        // }
-
-        // g.x = this.x
-        // g.y = this.y
-        // g.rotation = this.angle+Math.PI/2;
+    for (let i=0;i<traits.length;i++){
+        let trait = traits[i]
+        trait.alpha-=0.005
+        if(trait.alpha==0){
+            app.stage.removeChild(traits.pop())
+        }
     }
-}
-
-const randomNum = (min,max)=>{
-    return Math.floor(Math.random() * (max - min + 1) + min)
-}
 
 
+});
